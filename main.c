@@ -1,3 +1,7 @@
+/*
+* Trabalho de Computação Concorrente - Sistema de Reserva de Assentos
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -39,8 +43,18 @@ int alocaAssentoDado(t_Assento assento, int id){
 	return 0;
 }
 
+/**
+* Operação código 4: liberaAssento
+* @descrição: libera/desaloca o assento(assento) dado alocado pelo usuario de identificador "id"
+* @retorno: 1 se o assento foi desalocado, 0 se não
+* @restrição: Apenas a thread de mesmo identificador id pode realizar essa desalocacão
+*/
+int liberaAssento(t Assento assento, int id){
+	
+}
 
 int main(int argc, char *argv[]) {
+	
 	printf("Hello Assentos");
 	return 0;
 }
