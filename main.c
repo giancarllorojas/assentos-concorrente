@@ -30,7 +30,7 @@ void *thread2 () {
 	int tid = 2;
 	//visualiza mapa de assentos
 	visualizaAssentos(tid);
-	t_Assento assento = mapa[rand() % n_assentos]; //inicializa com um assento
+	t_Assento assento = pega_assento(rand() % n_assentos); //inicializa com um assento
 	//tenta alocar um assento especifico
 	alocaAssentoDado(assento, tid);
 	//visualiza mapa de assentos

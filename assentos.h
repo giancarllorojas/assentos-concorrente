@@ -15,14 +15,13 @@ typedef struct t_Log{
 	int *mapa;
 }t_Log;
 
-t_Assento *mapa; /* t_Assentos: estrutura para guardar o mapa de assentos */
 int n_assentos;
 
 void init(int qtd, FILE* arq);
-
 void insere_log_buffer(t_Log log);
 void consome_log_buffer();
 
+t_Assento pega_assento(int posicao);
 void visualizaAssentos();
 int alocaAssentoLivre(t_Assento *assento, int id);
 int alocaAssentoDado(t_Assento assento, int id);

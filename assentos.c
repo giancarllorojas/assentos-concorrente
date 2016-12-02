@@ -23,8 +23,8 @@ typedef struct t_Log{
 
 /* Variáveis globais */
 t_Log buffer[TAM_BUFFER];
-sem_t slotCheio, slotVazio, mutex, aloca;
-t_Assento *mapa;
+sem_t slotCheio, slotVazio, mutex, *aloca;
+t_Assento *t_Assentos;
 int n_assentos, in = 0, out = 0;
 FILE *arq_saida;
 /* ----------------------------- */
@@ -37,27 +37,29 @@ FILE *arq_saida;
 */
 void init(int qtd, FILE* arq){
 	int i;
-	mapa = (t_Assento *)malloc(sizeof(t_Assento)*qtd);
+	t_Assentos = (t_Assento *)malloc(sizeof(t_Assento)*qtd);
+	aloca = (sem_t *)malloc(sizeof(sem_t)*qtd);
 	for(i=0; i < qtd; i++){
-		mapa[i].id_usuario = LIVRE;
-		mapa[i].estado = LIVRE;
-		mapa[i].posicao = i;
+		t_Assentos[i].id_usuario = LIVRE;
+		t_Assentos[i].estado = LIVRE;
+		t_Assentos[i].posicao = i;
+		sem_init(&aloca[i], 0, 1);
 	}
 	n_assentos = qtd;
 	arq_saida = arq;
 	sem_init(&slotCheio, 0, 0);
 	sem_init(&slotVazio, 0, qtd);
 	sem_init(&mutex, 0, 1);
-	sem_init(&aloca, 0, 1);
+	
 }
 
 /**
-* Retorna uma cópia simples do estado atual do mapa
+* Retorna uma cópia simples do estado atual de t_Assentos em um mapa de inteiros
 */
 int *clone_mapa(){
 	int *m = (int *)malloc(sizeof(int)*n_assentos), i;
 	for(i = 0; i < n_assentos; i++){
-		m[i] = mapa[i].id_usuario;
+		m[i] = t_Assentos[i].id_usuario;
 	}
 	return m;
 }
@@ -120,6 +122,10 @@ void consome_log_buffer(){
 	sem_post(&slotVazio);
 }
 
+t_Assento pega_assento(int posicao){
+	return t_Assentos[posicao];
+}
+
 /**
 * Operação código 1: visualizaAssentos
 * @descrição: Visualiza o mapa de assentos 
@@ -146,24 +152,24 @@ int alocaAssentoLivre(t_Assento *assento, int id){
 	t_Log log;
 	int i;
 	int *m;
-	sem_wait(&aloca);
+
 	for(i = 0; i < n_assentos; i++){
-		if(!mapa[i].estado){
-			mapa[i].id_usuario = id;
-			mapa[i].estado = RESERVADO;
-			*assento = mapa[i];
+		sem_wait(&aloca[i]);
+		if(!t_Assentos[i].estado){
+			t_Assentos[i].id_usuario = id;
+			t_Assentos[i].estado = RESERVADO;
+			*assento = t_Assentos[i];
 			m = clone_mapa();
-			sem_post(&aloca);
 			log_init(&log, 2, id, assento->posicao, m);
 			insere_log_buffer(log);
+			sem_post(&aloca[i]);
 			return 1;
 		}
+		sem_post(&aloca[i]);
 	}
 	m = clone_mapa();
-	sem_post(&aloca);
 	log_init(&log, 2, id, -1, m);
 	insere_log_buffer(log);
-	
 	return 0;
 }
 
@@ -177,19 +183,17 @@ int alocaAssentoLivre(t_Assento *assento, int id){
 int alocaAssentoDado(t_Assento assento, int id){
 	t_Log log;
 	int *m;
-	sem_wait(&aloca);
 	if(!assento.estado){
+		sem_wait(&aloca[assento.posicao]);
 		assento.id_usuario = id;
 		assento.estado = RESERVADO;
 		m = clone_mapa();
-		sem_post(&aloca);
 		log_init(&log, 3, id, assento.posicao, m);
 		insere_log_buffer(log);
-		
+		sem_post(&aloca[assento.posicao]);
 		return 1;
 	}else{
 		m = clone_mapa();
-		sem_post(&aloca);
 		log_init(&log, 3, id, -1, m);
 		insere_log_buffer(log);
 		return 0;
@@ -208,8 +212,8 @@ int liberaAssento(t_Assento assento, int id){
 	t_Log log;
 	//printf("debug: \n id: %d estado: %d u_id: %d\n", id, assento.estado, assento.id_usuario);
 	if(assento.id_usuario == id && assento.estado){
-		mapa[assento.posicao].id_usuario = LIVRE;
-		mapa[assento.posicao].estado = LIVRE;
+		t_Assentos[assento.posicao].id_usuario = LIVRE;
+		t_Assentos[assento.posicao].estado = LIVRE;
 		m = clone_mapa();
 		log_init(&log, 4, id, assento.posicao, m);
 		insere_log_buffer(log);
