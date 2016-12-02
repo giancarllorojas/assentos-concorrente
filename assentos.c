@@ -27,9 +27,13 @@ sem_t slotCheio, slotVazio, mutex, aloca;
 t_Assento *mapa;
 int n_assentos, in = 0, out = 0;
 FILE *arq_saida;
+/* ----------------------------- */
 
 /*
-* Inicializa as variaveis para o sistema funcionar
+* Inicializa as variaveis para o sistema funcionar:
+* - Mapa de assentos com todos assentos livres
+* - Inicializa os semaforos
+* - Guarda a quantidade de assentos em uma variavel global
 */
 void init(int qtd, FILE* arq){
 	int i;
@@ -92,6 +96,7 @@ void log_destroy(t_Log *log){
 	free(log);
 }
 
+/* Insere um log no buffer */
 void insere_log_buffer(t_Log log){
 	sem_wait(&slotVazio);
 	sem_wait(&mutex);
@@ -101,6 +106,9 @@ void insere_log_buffer(t_Log log){
 	sem_post(&slotCheio);
 }
 
+/*
+* Retira um log do buffer e o consome, imprimindo o resultado no stdout e no arquivo de saida
+*/
 void consome_log_buffer(){
 	t_Log log;
 	sem_wait(&slotCheio);
@@ -112,14 +120,12 @@ void consome_log_buffer(){
 	sem_post(&slotVazio);
 }
 
-void assento_init(t_Assento *end){
-	t_Assento *a;
-	a = (t_Assento *)malloc(sizeof(t_Assento));
-	a->estado = LIVRE;
-	a->id_usuario = LIVRE;
-	*end = *a;
-}
-
+/**
+* Operação código 1: visualizaAssentos
+* @descrição: Visualiza o mapa de assentos 
+* @retorno: void
+* @log: a operação(1), id da thread e o mapa de assentos
+*/
 void visualizaAssentos(int id){
 	t_Log log;
 	int *m = clone_mapa(m);
@@ -127,6 +133,15 @@ void visualizaAssentos(int id){
 	insere_log_buffer(log);
 }
 
+/**
+* Operação código 2: alocaAssentoLivre
+* @descrição: Escolhe de forma aleatória um assento livre e aloca para a thread(usuário) com
+* identificador "id"
+* @retorno: O assento é alocado no parâmetro "assento", retornando 1 caso tenha sido alocado 
+* e 0 se não
+* @restrição: Apenas a thread de mesmo identificador id pode realizar essa alocacão
+* @log: a operação, id da thread, assento selecionado e o mapa de assentos imediatamente apos a alocaço
+*/
 int alocaAssentoLivre(t_Assento *assento, int id){
 	t_Log log;
 	int i;
@@ -152,6 +167,13 @@ int alocaAssentoLivre(t_Assento *assento, int id){
 	return 0;
 }
 
+/**
+* Operação código 3: alocaAssentoDado
+* @descrição: Aloca o assento dado para uma thread(usuário) de identificador "id"
+* @retorno: 1 se o assento foi alocado, 0 se não
+* @restrição: Apenas a thread de mesmo identificador id pode realizar essa alocacão
+* @log: a operação, id da thread, assento selecionado e o mapa de assentos imediatamente apos a alocaço
+*/
 int alocaAssentoDado(t_Assento assento, int id){
 	t_Log log;
 	int *m;
@@ -174,6 +196,13 @@ int alocaAssentoDado(t_Assento assento, int id){
 	}
 }
 
+/**
+* Operação código 4: liberaAssento
+* @descrição: libera/desaloca o assento(assento) dado alocado pelo usuario de identificador "id"
+* @retorno: 1 se o assento foi desalocado, 0 se não
+* @restrição: Apenas a thread de mesmo identificador id pode realizar essa desalocacão
+* @log: a operação, id da thread, assento selecionado e o mapa de assentos imediatamente apos a alocaço
+*/
 int liberaAssento(t_Assento assento, int id){
 	int *m,i;
 	t_Log log;
