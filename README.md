@@ -1,15 +1,26 @@
 # Sistema de reserva de assentos
 
-#### Trabalho de computação concorrente - UFRJ 2016.2
+#### Trabalho de computaÃ§Ã£o concorrente - UFRJ 2016.2
 
-Descrição do problema: Um sistema de reserva de assentos consiste em um programa que mantem informações sobre a alocação de assentos em um espaço físico ou em um meio de transporte, permitindo
-que usuários remotos possam ver o estado das alocações, solicitar nova alocação ou cancelar uma alocação realizada previamente pelo próprio usuário. Normalmente esse tipo de sistema e executado em um ambiente distribuído com duas aplicações distintas: uma que executa o código que gerencia as estruturas de dados usadas para manter o estado de alocação dos assentos e outra que é executada em maquinas remotas pelos usuários. Em essência, trata-se de uma aplicação concorrente com vários fluxos de execução independentes.
+**DescriÃ§Ã£o do problema:** Um sistema de reserva de assentos consiste em um programa que mantem informaÃ§Ãµes sobre a alocaÃ§Ã£o de assentos em um espaÃ§o fÃ­sico ou em um meio de transporte, permitindo
+que usuÃ¡rios remotos possam ver o estado das alocaÃ§Ãµes, solicitar nova alocaÃ§Ã£o ou cancelar uma alocaÃ§Ã£o realizada previamente pelo prÃ³prio usuÃ¡rio. Normalmente esse tipo de sistema e executado em um ambiente distribuÃ­do com duas aplicaÃ§Ãµes distintas: uma que executa o cÃ³digo que gerencia as estruturas de dados usadas para manter o estado de alocaÃ§Ã£o dos assentos e outra que Ã© executada em maquinas remotas pelos usuÃ¡rios. Em essÃªncia, trata-se de uma aplicaÃ§Ã£o concorrente com vÃ¡rios fluxos de execuÃ§Ã£o independentes.
 
-A versão aqui implementada é simplificada e rodará em apenas uma máquina, utilizando várias threads independentes para simular.
+A versÃ£o aqui implementada Ã© simplificada e rodarÃ¡ em apenas uma mÃ¡quina, utilizando vÃ¡rias threads independentes para simular.
 
-Condições da implementação:
-- O numero de assentos deve ser passado como parâmetro no início da execução da aplicação.
-- Quando um assento e reservado, ele deve guardar um identificador único do usuário que fez a reserva no mapa de assentos.
-- Dois ou mais usuários não podem alocar o mesmo assento ao mesmo tempo
-- Se um assento já está alocado, ele não pode ser realocado para outro usuário, apenas se esse assento for liberado posteriormente pelo usuário dono da reserva.
-- Entre o instante em que um usuário visualiza o mapa de assentos e o instante seguinte em que ele solicita a alocação de um assento, pode ocorrer de outro usuário já ter alocado o assento que previamente (na visualização anterior) estava livre.
+**CondiÃ§Ãµes da implementaÃ§Ã£o:**
+- O numero de assentos deve ser passado como parÃ¢metro no inÃ­cio da execuÃ§Ã£o da aplicaÃ§Ã£o.
+- Quando um assento e reservado, ele deve guardar um identificador Ãºnico do usuÃ¡rio que fez a reserva no mapa de assentos.
+- Dois ou mais usuÃ¡rios nÃ£o podem alocar o mesmo assento ao mesmo tempo
+- Se um assento jÃ¡ estÃ¡ alocado, ele nÃ£o pode ser realocado para outro usuÃ¡rio, apenas se esse assento for liberado posteriormente pelo usuÃ¡rio dono da reserva.
+- Entre o instante em que um usuÃ¡rio visualiza o mapa de assentos e o instante seguinte em que ele solicita a alocaÃ§Ã£o de um assento, pode ocorrer de outro usuÃ¡rio jÃ¡ ter alocado o assento que previamente (na visualizaÃ§Ã£o anterior) estava livre.
+
+**Compilando e rodando:**
+
+Para compilar basta digitar:
+```
+gcc main.c assentos.c -lpthread -o assentos
+```
+Para rodar use:
+```
+./assentos <arquivo de saÃ­da> <quantidade de assentos>
+```
