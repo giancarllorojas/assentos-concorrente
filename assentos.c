@@ -23,9 +23,9 @@ typedef struct t_Log{
 
 /* Variáveis globais */
 t_Log buffer[TAM_BUFFER];
-sem_t slotCheio, slotVazio, mutex, *aloca;
+sem_t slotCheio, slotVazio, buffer_mutex, log_mutex, *aloca;
 t_Assento *t_Assentos;
-int n_assentos, in = 0, out = 0;
+int n_assentos;
 FILE *arq_saida;
 /* ----------------------------- */
 
@@ -47,17 +47,19 @@ void init(int qtd, FILE* arq){
 	}
 	n_assentos = qtd;
 	arq_saida = arq;
+	fprintf(arq_saida, "%d\n", n_assentos);
 	sem_init(&slotCheio, 0, 0);
-	sem_init(&slotVazio, 0, qtd);
-	sem_init(&mutex, 0, 1);
-	
+	sem_init(&slotVazio, 0, TAM_BUFFER);
+	sem_init(&buffer_mutex, 0, 1);
+	sem_init(&log_mutex, 0, 1);
 }
 
 /**
-* Retorna uma cópia simples do estado atual de t_Assentos em um mapa de inteiros
+* Retorna uma cópia simples do estado atual de t_Assentos em um array de inteiros com id's de usuários que alocaram o
 */
 int *clone_mapa(){
 	int *m = (int *)malloc(sizeof(int)*n_assentos), i;
+	//printf("%d\n", n_assentos);
 	for(i = 0; i < n_assentos; i++){
 		m[i] = t_Assentos[i].id_usuario;
 	}
@@ -100,11 +102,12 @@ void log_destroy(t_Log *log){
 
 /* Insere um log no buffer */
 void insere_log_buffer(t_Log log){
+	static int in = 0;
 	sem_wait(&slotVazio);
-	sem_wait(&mutex);
+	sem_wait(&buffer_mutex);
 	buffer[in] = log;
 	in = (in + 1) % TAM_BUFFER;
-	sem_post(&mutex);
+	sem_post(&buffer_mutex);
 	sem_post(&slotCheio);
 }
 
@@ -112,6 +115,7 @@ void insere_log_buffer(t_Log log){
 * Retira um log do buffer e o consome, imprimindo o resultado no stdout e no arquivo de saida
 */
 void consome_log_buffer(){
+	static int out = 0;
 	t_Log log;
 	sem_wait(&slotCheio);
 	log = buffer[out];
@@ -183,21 +187,24 @@ int alocaAssentoLivre(t_Assento *assento, int id){
 int alocaAssentoDado(t_Assento assento, int id){
 	t_Log log;
 	int *m;
-	if(!assento.estado){
-		sem_wait(&aloca[assento.posicao]);
-		assento.id_usuario = id;
-		assento.estado = RESERVADO;
+	t_Assento * a = &t_Assentos[assento.posicao];
+	sem_wait(&aloca[a->posicao]);
+	if(a->estado == 0){
+		a->id_usuario = id;
+		a->estado = RESERVADO;
 		m = clone_mapa();
-		log_init(&log, 3, id, assento.posicao, m);
+		log_init(&log, 3, id, a->posicao, m);
 		insere_log_buffer(log);
 		sem_post(&aloca[assento.posicao]);
 		return 1;
 	}else{
 		m = clone_mapa();
-		log_init(&log, 3, id, -1, m);
+		log_init(&log, 3, id, assento.posicao, m);
 		insere_log_buffer(log);
+		sem_post(&aloca[assento.posicao]);
 		return 0;
 	}
+	
 }
 
 /**
@@ -211,17 +218,20 @@ int liberaAssento(t_Assento assento, int id){
 	int *m,i;
 	t_Log log;
 	//printf("debug: \n id: %d estado: %d u_id: %d\n", id, assento.estado, assento.id_usuario);
+	sem_wait(&aloca[assento.posicao]);
 	if(assento.id_usuario == id && assento.estado){
 		t_Assentos[assento.posicao].id_usuario = LIVRE;
 		t_Assentos[assento.posicao].estado = LIVRE;
 		m = clone_mapa();
 		log_init(&log, 4, id, assento.posicao, m);
 		insere_log_buffer(log);
+		sem_post(&aloca[assento.posicao]);
 		return 1;
 	}else{
 		m = clone_mapa();
 		log_init(&log, 4, id, assento.posicao, m);
 		insere_log_buffer(log);
+		sem_post(&aloca[assento.posicao]);
 		return 0;
 	}
 }
